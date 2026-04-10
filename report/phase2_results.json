@@ -1,0 +1,510 @@
+{
+  "embedding_backend": "mock",
+  "top_k": 3,
+  "doc_inventory": [
+    {
+      "name": "python_intro.txt",
+      "chars": 1944,
+      "metadata": {
+        "department": "engineering",
+        "language": "en",
+        "source_type": "intro",
+        "date": "2026-04-10",
+        "source": "data/python_intro.txt",
+        "doc_id": "python_intro"
+      }
+    },
+    {
+      "name": "vector_store_notes.md",
+      "chars": 2123,
+      "metadata": {
+        "department": "engineering",
+        "language": "en",
+        "source_type": "notes",
+        "date": "2026-04-10",
+        "source": "data/vector_store_notes.md",
+        "doc_id": "vector_store_notes"
+      }
+    },
+    {
+      "name": "rag_system_design.md",
+      "chars": 2391,
+      "metadata": {
+        "department": "engineering",
+        "language": "en",
+        "source_type": "design",
+        "date": "2026-04-10",
+        "source": "data/rag_system_design.md",
+        "doc_id": "rag_system_design"
+      }
+    },
+    {
+      "name": "customer_support_playbook.txt",
+      "chars": 1692,
+      "metadata": {
+        "department": "support",
+        "language": "en",
+        "source_type": "playbook",
+        "date": "2026-04-10",
+        "source": "data/customer_support_playbook.txt",
+        "doc_id": "customer_support_playbook"
+      }
+    },
+    {
+      "name": "chunking_experiment_report.md",
+      "chars": 1987,
+      "metadata": {
+        "department": "engineering",
+        "language": "en",
+        "source_type": "report",
+        "date": "2026-04-10",
+        "source": "data/chunking_experiment_report.md",
+        "doc_id": "chunking_experiment_report"
+      }
+    },
+    {
+      "name": "vi_retrieval_notes.md",
+      "chars": 1667,
+      "metadata": {
+        "department": "engineering",
+        "language": "vi",
+        "source_type": "notes",
+        "date": "2026-04-10",
+        "source": "data/vi_retrieval_notes.md",
+        "doc_id": "vi_retrieval_notes"
+      }
+    }
+  ],
+  "benchmark": [
+    {
+      "query": "What are the four stages of a typical vector search pipeline?",
+      "gold": "Chunk documents, embed each chunk, store vector+metadata, then embed query and rank by similarity."
+    },
+    {
+      "query": "Why can retrieval return the wrong audience procedures, and how should teams prevent that?",
+      "gold": "Because mixed customer/support/engineering content causes wrong-scope retrieval; prevent with metadata separation and filtering."
+    },
+    {
+      "query": "Which chunking strategy showed the best balance in the experiment, and why?",
+      "gold": "Recursive chunking; it preserves structure first and falls back to finer separators to keep context while respecting size."
+    },
+    {
+      "query": "Vi sao metadata quan trong trong retrieval va bo loc co the giup nhu the nao?",
+      "gold": "Metadata cho phep loc theo phong ban/ngon ngu/do nhay cam/ngay cap nhat de tang precision va giam nhieu."
+    },
+    {
+      "query": "If no document explains a newly introduced billing issue, what should the assistant do?",
+      "gold": "The assistant should recommend escalation and state uncertainty instead of improvising a risky answer."
+    }
+  ],
+  "strategies": {
+    "fixed_size": {
+      "chunk_count": 41,
+      "avg_chunk_len": 330.59,
+      "results": [
+        {
+          "query": "What are the four stages of a typical vector search pipeline?",
+          "top3": [
+            {
+              "score": 0.304,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "integrate models into applications. Libraries such as scikit-learn, PyTorch, and TensorFlow provide reusable building blocks for classical machine learning and deep learning. In retrieval-augmented generation systems, Py"
+            },
+            {
+              "score": 0.2407,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "g runbooks, and support notes, but employees waste time searching across disconnected folders.  ## Goal  Build a retrieval-augmented generation system that finds relevant internal documents before producing an answer. Th"
+            },
+            {
+              "score": 0.2183,
+              "source": "data/vi_retrieval_notes.md",
+              "language": "vi",
+              "department": "engineering",
+              "preview": " marketing hoặc tài liệu tiếng Anh không liên quan.  Trong thực tế, retrieval không phải lúc nào cũng đúng. Một số lỗi thường gặp là tài liệu cũ vẫn xếp hạng cao, từ khóa trong câu hỏi không khớp với cách diễn đạt trong "
+            }
+          ]
+        },
+        {
+          "query": "Why can retrieval return the wrong audience procedures, and how should teams prevent that?",
+          "top3": [
+            {
+              "score": 0.3165,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "employee questions such as \"How do I deploy the billing API?\" or \"Who owns the checkout service?\" Success is not only whether the answer sounds fluent, but whether the retrieved evidence is relevant, traceable, and up to"
+            },
+            {
+              "score": 0.2826,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "integrate models into applications. Libraries such as scikit-learn, PyTorch, and TensorFlow provide reusable building blocks for classical machine learning and deep learning. In retrieval-augmented generation systems, Py"
+            },
+            {
+              "score": 0.2034,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "# Vector Store Notes  A vector store is a database or storage layer designed to keep embeddings and retrieve the most similar items to a query vector. In practical AI systems, a vector store is often used to support sema"
+            }
+          ]
+        },
+        {
+          "query": "Which chunking strategy showed the best balance in the experiment, and why?",
+          "top3": [
+            {
+              "score": 0.2367,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": " text and should clearly separate retrieved context from generated synthesis.  ## Proposed Architecture  The ingestion pipeline reads markdown and text files from trusted directories, chunks them into semantically cohere"
+            },
+            {
+              "score": 0.2119,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "# Chunking Experiment Report  ## Purpose  This report summarizes a small experiment comparing fixed-size chunking, sentence-based chunking, and recursive chunking on internal documentation. The objective was to understan"
+            },
+            {
+              "score": 0.2035,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": ", especially when a procedure spanned multiple sentences. In those cases, search results sometimes returned a fragment that mentioned the right keyword but omitted the actual instruction.  ## Sentence-Based Chunking  Sen"
+            }
+          ]
+        },
+        {
+          "query": "Vi sao metadata quan trong trong retrieval va bo loc co the giup nhu the nao?",
+          "top3": [
+            {
+              "score": 0.3017,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "single codebase.  Despite its flexibility, Python has trade-offs. It is usually slower than low-level compiled languages for CPU-intensive workloads, and teams must pay attention to environment management, dependency pin"
+            },
+            {
+              "score": 0.2411,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "g runbooks, and support notes, but employees waste time searching across disconnected folders.  ## Goal  Build a retrieval-augmented generation system that finds relevant internal documents before producing an answer. Th"
+            },
+            {
+              "score": 0.2023,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": " text from the wrong department or outdated material.  ## Common Risks  Vector stores are powerful, but retrieval is not magically correct. Poor chunking, low-quality embeddings, missing metadata, and weak evaluation pra"
+            }
+          ]
+        },
+        {
+          "query": "If no document explains a newly introduced billing issue, what should the assistant do?",
+          "top3": [
+            {
+              "score": 0.2301,
+              "source": "data/vi_retrieval_notes.md",
+              "language": "vi",
+              "department": "engineering",
+              "preview": "Chất lượng chunking ảnh hưởng trực tiếp đến chất lượng retrieval. Nếu chunk quá ngắn, hệ thống có thể trả về các câu rời rạc thiếu ngữ cảnh. Nếu chunk quá dài, nhiều ý không liên quan sẽ bị gộp lại, làm giảm độ chính xác"
+            },
+            {
+              "score": 0.1881,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "sefulness of returned passages.  ## Fixed-Size Chunking  Fixed-size chunking was simple to implement and produced predictable chunk counts. It worked reasonably well for long technical documents because every chunk staye"
+            },
+            {
+              "score": 0.1852,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": " an agent should inspect. Specific language makes chunks more useful because the retriever can match concrete troubleshooting terms found in the user's question.  Metadata should distinguish between customer-facing artic"
+            }
+          ]
+        }
+      ]
+    },
+    "by_sentences": {
+      "chunk_count": 32,
+      "avg_chunk_len": 367.0,
+      "results": [
+        {
+          "query": "What are the four stages of a typical vector search pipeline?",
+          "top3": [
+            {
+              "score": 0.2189,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "To maintain reliability, the support operations team should review failed queries every week. Those reviews often reveal missing documents, poor chunk boundaries, or stale articles that still rank highly because their la"
+            },
+            {
+              "score": 0.1802,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "Specific language makes chunks more useful because the retriever can match concrete troubleshooting terms found in the user's question. Metadata should distinguish between customer-facing articles, internal support-only "
+            },
+            {
+              "score": 0.1756,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "## Common Risks  Vector stores are powerful, but retrieval is not magically correct. Poor chunking, low-quality embeddings, missing metadata, and weak evaluation practices can all cause misleading results. A system may r"
+            }
+          ]
+        },
+        {
+          "query": "Why can retrieval return the wrong audience procedures, and how should teams prevent that?",
+          "top3": [
+            {
+              "score": 0.3982,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "Customer Support Playbook for the AI Knowledge Assistant  The support team uses the knowledge assistant to answer repetitive questions about account setup, billing errors, password recovery, and service limitations. To m"
+            },
+            {
+              "score": 0.326,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Data scientists use it to clean data, train models, run evaluation scripts, and integrate models into applications. Libraries such as scikit-learn, PyTorch, and TensorFlow provide reusable building blocks for classical m"
+            },
+            {
+              "score": 0.3041,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Popular frameworks such as FastAPI, Django, and Flask make it practical to expose application logic over HTTP, while libraries like pandas and NumPy support data preparation and numerical workflows. This broad ecosystem "
+            }
+          ]
+        },
+        {
+          "query": "Which chunking strategy showed the best balance in the experiment, and why?",
+          "top3": [
+            {
+              "score": 0.2298,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Popular frameworks such as FastAPI, Django, and Flask make it practical to expose application logic over HTTP, while libraries like pandas and NumPy support data preparation and numerical workflows. This broad ecosystem "
+            },
+            {
+              "score": 0.2158,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "## Recursive Chunking  Recursive chunking offered the best balance in the experiment. It first tried to split on larger structural boundaries such as paragraphs, then fell back to smaller separators only when needed. As "
+            },
+            {
+              "score": 0.2089,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "# Chunking Experiment Report  ## Purpose  This report summarizes a small experiment comparing fixed-size chunking, sentence-based chunking, and recursive chunking on internal documentation. The objective was to understan"
+            }
+          ]
+        },
+        {
+          "query": "Vi sao metadata quan trong trong retrieval va bo loc co the giup nhu the nao?",
+          "top3": [
+            {
+              "score": 0.2738,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "Specific language makes chunks more useful because the retriever can match concrete troubleshooting terms found in the user's question. Metadata should distinguish between customer-facing articles, internal support-only "
+            },
+            {
+              "score": 0.1747,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "A common best practice is to keep Python projects structured and testable. That means separating data models from business logic, writing unit tests for key utilities, and keeping manual demos simple and reproducible. In"
+            },
+            {
+              "score": 0.1688,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Python is a high-level programming language widely used for automation, backend services, data analysis, scientific computing, and machine learning. Teams often choose Python because the language emphasizes readability, "
+            }
+          ]
+        },
+        {
+          "query": "If no document explains a newly introduced billing issue, what should the assistant do?",
+          "top3": [
+            {
+              "score": 0.2961,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "## Operational Considerations  As the document set grows, the team should track re-indexing behavior, document deletion, and source freshness. The system should also log which chunks were retrieved so reviewers can inspe"
+            },
+            {
+              "score": 0.2415,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "To maintain reliability, the support operations team should review failed queries every week. Those reviews often reveal missing documents, poor chunk boundaries, or stale articles that still rank highly because their la"
+            },
+            {
+              "score": 0.1917,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "For the tested data, recursive chunking produced the most consistently useful passages for downstream question answering. ## Conclusion  The experiment suggests that there is no universal best strategy, but recursive chu"
+            }
+          ]
+        }
+      ]
+    },
+    "recursive": {
+      "chunk_count": 49,
+      "avg_chunk_len": 239.02,
+      "results": [
+        {
+          "query": "What are the four stages of a typical vector search pipeline?",
+          "top3": [
+            {
+              "score": 0.3072,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "A common vector search pipeline has four stages:  1. **Chunk documents** into smaller units that preserve meaning. 2. **Embed each chunk** into a dense numerical vector. 3. **Store the vector and metadata** so records ca"
+            },
+            {
+              "score": 0.2752,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "# Chunking Experiment Report  ## Purpose  This report summarizes a small experiment comparing fixed-size chunking, sentence-based chunking, and recursive chunking on internal documentation. The objective was to understan"
+            },
+            {
+              "score": 0.2189,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "To maintain reliability, the support operations team should review failed queries every week. Those reviews often reveal missing documents, poor chunk boundaries, or stale articles that still rank highly because their la"
+            }
+          ]
+        },
+        {
+          "query": "Why can retrieval return the wrong audience procedures, and how should teams prevent that?",
+          "top3": [
+            {
+              "score": 0.254,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "# Vector Store Notes  A vector store is a database or storage layer designed to keep embeddings and retrieve the most similar items to a query vector. In practical AI systems, a vector store is often used to support sema"
+            },
+            {
+              "score": 0.1793,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "That is why teams should test retrieval quality with realistic queries, compare filtered versus unfiltered search, and inspect the actual chunks returned by the system. Good retrieval is a product of careful data prepara"
+            },
+            {
+              "score": 0.1673,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "Customer Support Playbook for the AI Knowledge Assistant"
+            }
+          ]
+        },
+        {
+          "query": "Which chunking strategy showed the best balance in the experiment, and why?",
+          "top3": [
+            {
+              "score": 0.2609,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "The downside was that chunk sizes became less consistent, and some dense sections still exceeded ideal embedding length when too many long sentences were grouped together."
+            },
+            {
+              "score": 0.2568,
+              "source": "data/vector_store_notes.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "A common vector search pipeline has four stages:  1. **Chunk documents** into smaller units that preserve meaning. 2. **Embed each chunk** into a dense numerical vector. 3. **Store the vector and metadata** so records ca"
+            },
+            {
+              "score": 0.2405,
+              "source": "data/vi_retrieval_notes.md",
+              "language": "vi",
+              "department": "engineering",
+              "preview": "Metadata cũng rất quan trọng. Ví dụ, một công ty có thể gắn nhãn tài liệu theo phòng ban, ngôn ngữ, độ nhạy cảm, hoặc ngày cập nhật. Khi người dùng hỏi về tài liệu kỹ thuật bằng tiếng Việt, bộ lọc metadata có thể giúp hệ"
+            }
+          ]
+        },
+        {
+          "query": "Vi sao metadata quan trong trong retrieval va bo loc co the giup nhu the nao?",
+          "top3": [
+            {
+              "score": 0.2325,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Sentence-based chunking improved readability because each chunk aligned with natural language boundaries. This made manual inspection easier and often produced more coherent retrieval results for short policy documents a"
+            },
+            {
+              "score": 0.1947,
+              "source": "data/rag_system_design.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "The ingestion pipeline reads markdown and text files from trusted directories, chunks them into semantically coherent segments, and stores those segments with metadata. Each stored record includes the source path, docume"
+            },
+            {
+              "score": 0.185,
+              "source": "data/chunking_experiment_report.md",
+              "language": "en",
+              "department": "engineering",
+              "preview": "## Conclusion  The experiment suggests that there is no universal best strategy, but recursive chunking is a strong default for mixed technical documentation. Teams should still validate this assumption with their own qu"
+            }
+          ]
+        },
+        {
+          "query": "If no document explains a newly introduced billing issue, what should the assistant do?",
+          "top3": [
+            {
+              "score": 0.2415,
+              "source": "data/customer_support_playbook.txt",
+              "language": "en",
+              "department": "support",
+              "preview": "To maintain reliability, the support operations team should review failed queries every week. Those reviews often reveal missing documents, poor chunk boundaries, or stale articles that still rank highly because their la"
+            },
+            {
+              "score": 0.2239,
+              "source": "data/vi_retrieval_notes.md",
+              "language": "vi",
+              "department": "engineering",
+              "preview": "Vì vậy, đội ngũ phát triển nên kiểm thử bằng các truy vấn thực tế, xem trực tiếp các chunk được trả về, và ghi nhận failure cases để cải thiện dữ liệu cũng như chiến lược truy xuất."
+            },
+            {
+              "score": 0.1878,
+              "source": "data/python_intro.txt",
+              "language": "en",
+              "department": "engineering",
+              "preview": "Python is also a major language in artificial intelligence. Data scientists use it to clean data, train models, run evaluation scripts, and integrate models into applications. Libraries such as scikit-learn, PyTorch, and"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
