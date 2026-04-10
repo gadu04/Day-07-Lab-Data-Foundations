@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import re
+from pathlib import Path
 
 
 HEADING_PATTERN = re.compile(r"^\s{0,3}(#{1,6})\s+(\S.*)$")
@@ -396,3 +397,44 @@ class ChunkingStrategyComparator:
                 "chunks": chunks,
             }
         return comparison
+
+
+def _run_cli_demo() -> None:
+    default_path = Path("data/book.md")
+    if default_path.exists():
+        text = default_path.read_text(encoding="utf-8")
+        source_label = str(default_path)
+    else:
+        text = (
+            "# Demo\n\n"
+            "## Intro\n"
+            "This is a short fallback sample for chunking.\n\n"
+            "- Item one\n"
+            "- Item two\n\n"
+            "| Col A | Col B |\n"
+            "|------|------|\n"
+            "| 1 | 2 |"
+        )
+        source_label = "inline demo text"
+
+    print(f"[chunking.py] Source: {source_label}")
+
+    strategies = {
+        "fixed_size": FixedSizeChunker(chunk_size=2200, overlap=200),
+        "by_sentences": SentenceChunker(max_sentences_per_chunk=8),
+        "recursive": RecursiveChunker(chunk_size=2200),
+        "document_structure": DocumentStructureChunker(chunk_size=2200),
+    }
+
+    for name, chunker in strategies.items():
+        chunks = chunker.chunk(text)
+        avg_len = (sum(len(chunk) for chunk in chunks) / len(chunks)) if chunks else 0.0
+        print(f"\n[{name}] count={len(chunks)} avg_length={avg_len:.2f}")
+        if chunks:
+            preview = "\n".join(chunks[0].splitlines()[:5])
+            print("Preview of first chunk:")
+            print(preview)
+
+
+if __name__ == "__main__":
+    _run_cli_demo()

@@ -70,9 +70,9 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| book.md | FixedSizeChunker (`fixed_size`) | 252 | 2196.83 | Ổn định độ dài, nhưng dễ cắt gãy theo ký tự |
-| book.md | SentenceChunker (`by_sentences`) | 435 | 1154.20 | Dễ đọc theo câu, nhưng context phân mảnh ở tài liệu dài |
-| book.md | RecursiveChunker (`recursive`) | 285 | 1762.25 | Cân bằng tốt giữa cấu trúc và giới hạn độ dài |
+| book.md| FixedSizeChunker (`fixed_size`) | 1119 | 499.82 | |
+| book.md| SentenceChunker (`by_sentences`) | 3877 | 128.28 | |
+| book.md| RecursiveChunker (`recursive`) | 1398 | 358.34 | |
 | book.md | **DocumentStructureChunker (`document_structure`)** | **301** | **1739.23** | **Giữ heading/list/table tốt nhất cho Markdown dài** |
 
 ### Strategy Của Tôi
@@ -94,20 +94,24 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Retrieval Quality? |
 |-----------|----------|-------------|------------|--------------------|
-| book.md | best baseline: FixedSizeChunker | 252 | 2196.83 | 3.6/10 (mock embedding) |
-| book.md | best baseline: RecursiveChunker | 285 | 1762.25 | 3.0/10 (mock embedding) |
+| book.md | best baseline: FixedSizeChunker | 1119 | 499.83 | 3.6/10 |
+| book.md | best baseline: RecursiveChunker | 1398 | 358 | 3.0/10 |
 | book.md | **của tôi: DocumentStructureChunker** | **301** | **1739.23** | **5.6/10 (mock embedding), cao nhất trong lượt chạy** |
 
 ### So Sánh Với Thành Viên Khác
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Tôi | | | | |
-| [Tên] | | | | |
-| [Tên] | | | | |
+| Nguyễn Tuấn Hưng | Semantic Chunking | 9.5 | Giữ trọn vẹn ngữ cảnh của từng mục, truy xuất chính xác. | Các chunk có thể rất lớn, không phù hợp với các mô hình có giới hạn context nhỏ. |
+| Lê Minh Hoàng | SoftwareEngineeringChunker (Custom RecursiveTrunker) | 9 | Bảo tồn hoàn hảo cấu trúc tài liệu kỹ thuật nhờ ngắt theo Header; Giữ được mối liên kết logic. | Kích thước chunk trung bình lớn, gây tốn context window của mô hình. |
+| Nguyễn Xuân Hải | Parent-Child Chunking| 8 |Child nhỏ giúp tìm kiếm vector đúng mục tiêu, ít nhiễu | Gửi cả khối Parent lớn vào Prompt làm tăng chi phí API.
+| Tôi | DocumentStructureChunker | 6.3 | Giữ ngữ cảnh theo heading/list/table; grounding tốt cho tài liệu dài | Phức tạp hơn và tốn xử lý hơn; lợi thế giảm khi dữ liệu ít cấu trúc |
+|Thái Minh Kiên | Agentic Chunking | 8 | chunk giữ được ý nghĩa trọn vẹn, retrieval chính xác hơn, ít trả về nửa vời, Không cần một rule cố định cho mọi loại dữ liệu | Với dataset lớn cost sẽ tăng mạnh,  chậm hơn pipeline thường, không ổn định tuyệt đối |
+Trần Trung Hậu |Token-Based Chunking (Chia theo Token) | 8 | Kiểm soát chính xác tuyệt đối giới hạn đầu vào (context window) và chi phí API của LLM. | Cắt rất máy móc, dễ làm đứt gãy ngữ nghĩa của một từ hoặc một câu giữa chừng.
+| Tạ Bảo Ngọc | Sliding Window + Overlap | 7/10 | Giữ vẹn câu/khối logic, tối ưu length | bị trùng dữ liệu -> tăng số chunk |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
-> Trong benchmark hiện tại, DocumentStructureChunker cho điểm tổng hợp cao nhất vì chunk giữ được ngữ cảnh theo section thay vì bị cắt rời. Với tài liệu dạng sách Markdown dài, strategy này phù hợp hơn Sentence/Fixed/Recursive thuần separator.
+> `Semantic Chunking` là tốt nhất cho domain này vì nó tôn trọng cấu trúc logic của tài liệu, đảm bảo mỗi chunk là một đơn vị thông tin hoàn chỉnh. Điều này giúp hệ thống RAG truy xuất được ngữ cảnh đầy đủ để trả lời các câu hỏi về các nguyên lý cụ thể một cách chính xác nhất.
 
 ---
 
