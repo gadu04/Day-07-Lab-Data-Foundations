@@ -25,6 +25,7 @@ _mock_embed = getattr(_m, '_mock_embed')
 FixedSizeChunker = getattr(_m, 'FixedSizeChunker')
 SentenceChunker = getattr(_m, 'SentenceChunker')
 RecursiveChunker = getattr(_m, 'RecursiveChunker')
+DocumentStructureChunker = getattr(_m, 'DocumentStructureChunker')
 ChunkingStrategyComparator = getattr(_m, 'ChunkingStrategyComparator')
 MockEmbedder = getattr(_m, 'MockEmbedder')
 template = _m
@@ -142,6 +143,34 @@ class TestRecursiveChunker(unittest.TestCase):
         text = "paragraph one\n\nparagraph two\n\nparagraph three"
         chunks = RecursiveChunker(separators=["\n\n"], chunk_size=200).chunk(text)
         self.assertGreaterEqual(len(chunks), 1)
+
+
+class TestDocumentStructureChunker(unittest.TestCase):
+
+    def test_returns_list(self):
+        text = "# Title\n\nParagraph one.\n\n- item 1\n- item 2"
+        chunks = DocumentStructureChunker(chunk_size=200).chunk(text)
+        self.assertIsInstance(chunks, list)
+
+    def test_preserves_heading_context(self):
+        text = "# Title\n\nIntro paragraph.\n\n## Details\n\nMore details here."
+        chunks = DocumentStructureChunker(chunk_size=60).chunk(text)
+        self.assertTrue(any(chunk.startswith("# Title") for chunk in chunks))
+        self.assertTrue(any("## Details" in chunk for chunk in chunks))
+
+    def test_keeps_list_and_table_blocks(self):
+        text = (
+            "# Section\n\n"
+            "- First item\n"
+            "- Second item\n\n"
+            "| Col A | Col B |\n"
+            "|------|------|\n"
+            "| 1 | 2 |\n"
+            "| 3 | 4 |"
+        )
+        chunks = DocumentStructureChunker(chunk_size=120).chunk(text)
+        self.assertTrue(any("- First item" in chunk and "- Second item" in chunk for chunk in chunks))
+        self.assertTrue(any("| Col A | Col B |" in chunk for chunk in chunks))
 
 
 class TestEmbeddingStore(unittest.TestCase):

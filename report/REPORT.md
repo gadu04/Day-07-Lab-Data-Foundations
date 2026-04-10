@@ -41,32 +41,24 @@
 
 ### Domain & Lý Do Chọn
 
-**Domain:** Internal knowledge assistant (engineering + support documentation)
+**Domain:** Software Engineering Principles
 
 **Tại sao nhóm chọn domain này?**
-> Domain này phù hợp với RAG vì dữ liệu có nhiều loại tài liệu khác nhau: hướng dẫn kỹ thuật, design notes, support playbook và ghi chú tiếng Việt. Việc trộn nhiều nguồn giúp đánh giá rõ tác động của chunking và metadata filtering. Đây cũng là bối cảnh gần với use case thực tế của trợ lý tri thức nội bộ.
+> Nhóm chúng tôi chọn domain này vì nó chứa các khái niệm cốt lõi, có cấu trúc rõ ràng và phân cấp, rất phù hợp để thử nghiệm các chiến lược chunking khác nhau. Việc hiểu và truy xuất chính xác các nguyên lý như SOLID, DRY, KISS là một bài toán thực tế và hữu ích cho các kỹ sư phần mềm.
 
 ### Data Inventory
 
 | # | Tên tài liệu | Nguồn | Số ký tự | Metadata đã gán |
 |---|--------------|-------|----------|-----------------|
-| 1 | python_intro.txt | data/python_intro.txt | 1944 | department=engineering, language=en, source_type=intro, date=2026-04-10 |
-| 2 | vector_store_notes.md | data/vector_store_notes.md | 2123 | department=engineering, language=en, source_type=notes, date=2026-04-10 |
-| 3 | rag_system_design.md | data/rag_system_design.md | 2391 | department=engineering, language=en, source_type=design, date=2026-04-10 |
-| 4 | customer_support_playbook.txt | data/customer_support_playbook.txt | 1692 | department=support, language=en, source_type=playbook, date=2026-04-10 |
-| 5 | chunking_experiment_report.md | data/chunking_experiment_report.md | 1987 | department=engineering, language=en, source_type=report, date=2026-04-10 |
-| 6 | vi_retrieval_notes.md | data/vi_retrieval_notes.md | 1667 | department=engineering, language=vi, source_type=notes, date=2026-04-10 |
+| 1 | book.md | https://onlinelibrary.wiley.com/doi/book/10.1002/9781394297696?msockid=342527e00a4661fb18ff345a0bdc6080 | 503401 | `{"category": "software-engineering", "source": "book.md"}` |
 
 ### Metadata Schema
 
 | Trường metadata | Kiểu | Ví dụ giá trị | Tại sao hữu ích cho retrieval? |
 |----------------|------|---------------|-------------------------------|
-| department | string | engineering, support | Lọc theo phạm vi kiến thức đúng team, giảm nhiễu giữa kỹ thuật và CS |
-| language | string | en, vi | Hỗ trợ truy vấn song ngữ, tránh trả nhầm ngôn ngữ |
-| source | string | data/vector_store_notes.md | Trace nguồn để kiểm chứng answer grounding |
-| source_type | string | notes, design, playbook, report | Hỗ trợ ưu tiên loại tài liệu phù hợp câu hỏi |
-| date | string (ISO) | 2026-04-10 | Hỗ trợ lọc tài liệu mới/cũ |
-| doc_id | string | vector_store_notes | Quản lý xóa/cập nhật theo document |
+| category | string | "software-engineering" | Giúp lọc các tài liệu theo chủ đề lớn, hữu ích khi hệ thống có nhiều domain khác nhau. |
+| source | string | "book.md" | Cho phép truy xuất nguồn gốc của chunk, giúp xác minh thông tin và cung cấp thêm ngữ cảnh cho người dùng. |
+
 
 ---
 
@@ -78,19 +70,20 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| All 6 docs | FixedSizeChunker (`fixed_size`) | 41 | 330.59 | Trung bình: ổn định độ dài nhưng có lúc cắt gãy ý |
-| All 6 docs | SentenceChunker (`by_sentences`) | 32 | 367.00 | Khá tốt: dễ đọc, nhưng chunk có thể hơi dài/không đều |
-| All 6 docs | RecursiveChunker (`recursive`) | 49 | 239.02 | Tốt nhất về cân bằng ngữ cảnh và giới hạn độ dài |
+| book.md | FixedSizeChunker (`fixed_size`) | 252 | 2196.83 | Ổn định độ dài, nhưng dễ cắt gãy theo ký tự |
+| book.md | SentenceChunker (`by_sentences`) | 435 | 1154.20 | Dễ đọc theo câu, nhưng context phân mảnh ở tài liệu dài |
+| book.md | RecursiveChunker (`recursive`) | 285 | 1762.25 | Cân bằng tốt giữa cấu trúc và giới hạn độ dài |
+| book.md | **DocumentStructureChunker (`document_structure`)** | **301** | **1739.23** | **Giữ heading/list/table tốt nhất cho Markdown dài** |
 
 ### Strategy Của Tôi
 
-**Loại:** RecursiveChunker
+**Loại:** DocumentStructureChunker
 
 **Mô tả cách hoạt động:**
-> Strategy tách theo thứ tự ưu tiên từ separator lớn đến nhỏ (paragraph, newline, sentence boundary, space, fallback character-level). Nếu đoạn đang xét vẫn lớn hơn chunk_size, thuật toán đệ quy với separator tiếp theo. Cách này giữ được cấu trúc tài liệu khi có thể, nhưng vẫn đảm bảo chunk không vượt ngưỡng khi gặp đoạn dài. Đây là cơ chế cân bằng giữa coherence và retrieval coverage.
+> Strategy tách tài liệu theo cấu trúc Markdown/HTML-aware: heading, list, table, fenced code, HTML-like block. Mỗi chunk được giữ theo block logic thay vì cắt thẳng theo ký tự, và có thể đính kèm heading context để tăng khả năng grounding khi retrieval.
 
 **Tại sao tôi chọn strategy này cho domain nhóm?**
-> Bộ data gồm cả markdown theo mục, văn bản support dạng đoạn văn, và ghi chú tiếng Việt. RecursiveChunker khai thác được các boundary tự nhiên của từng loại văn bản thay vì ép theo chiều dài cố định. Trong benchmark, strategy này trả về đúng nhất ở query về pipeline 4 bước và thường giữ ngữ cảnh tốt trong top-3.
+> Dữ liệu nhóm dùng một tài liệu Markdown rất dài (`book.md`) có cấu trúc phân cấp rõ (nhiều heading, danh sách, mục lục, block quote). DocumentStructureChunker phù hợp nhất vì tận dụng chính cấu trúc tài liệu để tạo chunk có tính ngữ nghĩa và dễ truy vết nguồn.
 
 **Code snippet (nếu custom):**
 ```python
@@ -101,8 +94,9 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Retrieval Quality? |
 |-----------|----------|-------------|------------|--------------------|
-| All 6 docs | best baseline: SentenceChunker | 32 | 367.00 | Điểm tổng hợp cao nhất trong lượt chạy mock embedding (5.8/10) |
-| All 6 docs | **của tôi: RecursiveChunker** | 49 | 239.02 | Cân bằng tốt, sát top baseline (5.4/10), mạnh ở query quy trình kỹ thuật |
+| book.md | best baseline: FixedSizeChunker | 252 | 2196.83 | 3.6/10 (mock embedding) |
+| book.md | best baseline: RecursiveChunker | 285 | 1762.25 | 3.0/10 (mock embedding) |
+| book.md | **của tôi: DocumentStructureChunker** | **301** | **1739.23** | **5.6/10 (mock embedding), cao nhất trong lượt chạy** |
 
 ### So Sánh Với Thành Viên Khác
 
@@ -113,7 +107,7 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 | [Tên] | | | | |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
-> Trong lần benchmark này với mock embedding, SentenceChunker nhỉnh hơn về điểm tổng hợp vì giữ câu đầy đủ cho nhiều query dạng policy/support. Tuy nhiên RecursiveChunker cho chất lượng ổn định hơn ở truy vấn kỹ thuật cần cấu trúc rõ. Khuyến nghị thực tế: dùng RecursiveChunker làm default, sau đó A/B test với SentenceChunker trên query set của nhóm.
+> Trong benchmark hiện tại, DocumentStructureChunker cho điểm tổng hợp cao nhất vì chunk giữ được ngữ cảnh theo section thay vì bị cắt rời. Với tài liệu dạng sách Markdown dài, strategy này phù hợp hơn Sentence/Fixed/Recursive thuần separator.
 
 ---
 
@@ -123,11 +117,14 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 
 ### Chunking Functions
 
-**`SentenceChunker.chunk`** — approach:
-> Mình tách câu bằng regex `(?<=[.!?])\s+` để nhận ranh giới sau dấu kết thúc câu và gom theo `max_sentences_per_chunk`. Mỗi câu/chunk đều được `strip()` để tránh nhiễu do khoảng trắng. Edge cases được xử lý gồm text rỗng, text chỉ có whitespace, và trường hợp số câu không chia hết cho kích thước nhóm.
+**`DocumentStructureChunker.chunk`** — approach:
+> Mình parse tài liệu theo block-level structure trước (heading, list, table, code fence, html-like), sau đó mới ghép block thành chunk theo `chunk_size`. Cách này giúp chunk có tính ngữ nghĩa rõ hơn và không làm vỡ bảng/danh sách khi retrieve.
 
-**`RecursiveChunker.chunk` / `_split`** — approach:
-> Thuật toán đệ quy tách văn bản theo danh sách separators ưu tiên từ lớn đến nhỏ (`\n\n`, `\n`, `. `, ` `, `""`). Base cases gồm: text rỗng, text đã nhỏ hơn hoặc bằng `chunk_size`, hoặc hết separator thì fallback tách theo cửa sổ ký tự cố định. Cách này giữ được cấu trúc tự nhiên khi có thể và chỉ “cắt cứng” khi thật sự cần.
+**Heading-aware context** — approach:
+> Khi gặp heading mới, chunker cập nhật heading stack (`#`, `##`, `###`...) và có thể prepend heading context vào chunk content. Điều này giúp retrieval trả về đoạn có ngữ cảnh section đầy đủ, giảm trường hợp trả về đoạn rời khó hiểu.
+
+**Fallback split cho block quá lớn** — approach:
+> Nếu một block vẫn vượt quá `chunk_size`, chunker fallback sang recursive split bằng separator nhỏ dần. Nhờ đó vẫn đảm bảo giới hạn độ dài embedding mà không phá hỏng hoàn toàn cấu trúc gốc.
 
 ### EmbeddingStore
 
@@ -147,10 +144,10 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 ```
 pytest tests/ -v
 ...
-============================= 42 passed in 0.10s ==============================
+============================= 45 passed in 0.21s ==============================
 ```
 
-**Số tests pass:** 42 / 42
+**Số tests pass:** 45 / 45
 
 ---
 
@@ -158,14 +155,14 @@ pytest tests/ -v
 
 | Pair | Sentence A | Sentence B | Dự đoán | Actual Score | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
-| 1 | Vector stores enable semantic search. | Vector databases support semantic retrieval. | high | 0.1139 | Đúng (tương đối) |
-| 2 | Recursive chunking preserves context. | Python decorators modify function behavior. | low | 0.0037 | Đúng |
-| 3 | Metadata filters improve retrieval precision. | Metadata tags help narrow search scope. | high | 0.0808 | Đúng (tương đối) |
-| 4 | The assistant should escalate unknown billing issues. | When no billing guide exists, escalate to support. | high | 0.0949 | Đúng (tương đối) |
-| 5 | Sentence chunking improves readability. | Nuclear fusion powers stars in distant galaxies. | low | 0.1096 | Sai |
+| 1 | IS governance defines decision structures and accountability mechanisms. | Information systems governance organizes decision rights and responsibilities. | high | -0.0991 | Sai |
+| 2 | Cloud-centric architecture centralizes advanced services for users. | Host-centric systems relied on centralized mainframe resources. | medium | 0.1575 | Đúng (tương đối) |
+| 3 | Urbanization maps territories and information flows. | Urbanization helps decision-makers analyze architecture constraints and opportunities. | high | -0.1536 | Sai |
+| 4 | COBIT is used as a governance benchmark for IS audit. | ITIL focuses on service lifecycle and operational quality. | medium | 0.0393 | Đúng |
+| 5 | Information systems alignment supports strategic agility. | A random recipe about cooking pasta with tomatoes. | low | -0.0156 | Đúng |
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn nghĩa?**
-> Pair 5 gây bất ngờ vì dự đoán low nhưng score lại gần nhóm “high tương đối” trong bộ thử nghiệm này. Lý do là mình dùng mock embedding deterministic (không học ngữ nghĩa thật), nên điểm số không phản ánh semantic quality như model embedding thật. Điều này cho thấy khi đánh giá chất lượng semantic retrieval, nên ưu tiên backend embedding thật (Local/OpenAI) và benchmark theo task thực tế.
+> Kết quả gây bất ngờ nhất là cặp 1 và 3: ngữ nghĩa gần nhau nhưng score âm. Nguyên nhân chính là benchmark đang dùng mock embedding deterministic, không phải semantic embedder thật, nên score chỉ có tính tham khảo kỹ thuật. Vì vậy khi đánh giá chất lượng retrieval thực tế, nên dùng Local/OpenAI embedding và giữ cùng query set để so sánh công bằng.
 
 ---
 
@@ -177,50 +174,60 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | # | Query | Gold Answer |
 |---|-------|-------------|
-| 1 | What are the four stages of a typical vector search pipeline? | Chunk documents, embed each chunk, store vector+metadata, then embed query and rank by similarity. |
-| 2 | Why can retrieval return the wrong audience procedures, and how should teams prevent that? | Mixed customer/support/engineering content causes wrong-scope retrieval; prevent with metadata separation and filtering. |
-| 3 | Which chunking strategy showed the best balance in the experiment, and why? | Recursive chunking; it preserves larger structure first and falls back to finer separators to keep context while respecting size. |
-| 4 | Vi sao metadata quan trong trong retrieval va bo loc co the giup nhu the nao? | Metadata giup loc theo phong ban, ngon ngu, do nhay cam va ngay cap nhat de tang precision, giam nhieu. |
-| 5 | If no document explains a newly introduced billing issue, what should the assistant do? | Assistant should recommend escalation and state uncertainty instead of improvising a risky answer. |
+| 1 | What are the three key concepts proposed to approach information systems management? | Governance, urbanization, and alignment. |
+| 2 | How did technological waves evolve from host centric to cloud centric? | From host-centric to client-server, then network-centric, then cloud-centric. |
+| 3 | What is the relationship between global governance and IS governance? | IS governance derives from organizational governance and balances compliance with performance/value creation. |
+| 4 | Which governance benchmarks are discussed in practice such as COBIT and ITIL? | COBIT and ITIL are major benchmarks, alongside others like ValIT, RiskIT, GTAG, ISO. |
+| 5 | What is the purpose of IS urbanization? | To visualize organization levels, detect constraints/opportunities, and improve information flow coherence. |
 
 ### Thiết Lập Chạy Benchmark
 
 - Embedding backend: mock
 - top_k: 3
-- Bộ dữ liệu: 6 tài liệu trong thư mục data
-- So sánh công bằng: cùng query set, cùng top_k, cùng embedding backend cho cả 3 strategy
+- Bộ dữ liệu: 1 tài liệu `book.md` (Markdown dài, có heading/list/table)
+- So sánh công bằng: cùng query set, cùng top_k, cùng embedding backend cho cả 4 strategy
 
 ### Kết Quả Top-3 Theo Strategy
 
 #### A) FixedSizeChunker (`fixed_size`)
 
-| # | Query | Top-3 retrieved (nguồn chính) | Query Score (/10) |
+| # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
-| 1 | Four stages pipeline | python_intro, rag_system_design, vi_retrieval_notes | 4 |
-| 2 | Wrong audience procedures | rag_system_design, python_intro, vector_store_notes | 3 |
-| 3 | Best chunking strategy | rag_system_design, chunking_experiment_report, chunking_experiment_report | 6 |
-| 4 | Metadata utility (VI) | python_intro, rag_system_design, vector_store_notes | 5 |
-| 5 | New billing issue fallback | vi_retrieval_notes, chunking_experiment_report, customer_support_playbook | 5 |
+| 1 | Three key concepts | [72, 149, 145] | 7 |
+| 2 | Technological waves | [212, 109, 241] | 0 |
+| 3 | Global vs IS governance | [164, 100, 149] | 0 |
+| 4 | COBIT/ITIL benchmarks | [248, 73, 113] | 4 |
+| 5 | Purpose of IS urbanization | [99, 38, 88] | 7 |
 
 #### B) SentenceChunker (`by_sentences`)
 
-| # | Query | Top-3 retrieved (nguồn chính) | Query Score (/10) |
+| # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
-| 1 | Four stages pipeline | customer_support_playbook, customer_support_playbook, vector_store_notes | 3 |
-| 2 | Wrong audience procedures | customer_support_playbook, python_intro, python_intro | 8 |
-| 3 | Best chunking strategy | python_intro, chunking_experiment_report, chunking_experiment_report | 7 |
-| 4 | Metadata utility (VI) | customer_support_playbook, python_intro, python_intro | 7 |
-| 5 | New billing issue fallback | rag_system_design, customer_support_playbook, chunking_experiment_report | 4 |
+| 1 | Three key concepts | [417, 21, 251] | 4 |
+| 2 | Technological waves | [415, 211, 302] | 0 |
+| 3 | Global vs IS governance | [164, 355, 181] | 4 |
+| 4 | COBIT/ITIL benchmarks | [407, 247, 103] | 0 |
+| 5 | Purpose of IS urbanization | [232, 150, 122] | 4 |
 
 #### C) RecursiveChunker (`recursive`)
 
-| # | Query | Top-3 retrieved (nguồn chính) | Query Score (/10) |
+| # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
-| 1 | Four stages pipeline | vector_store_notes, chunking_experiment_report, customer_support_playbook | 8 |
-| 2 | Wrong audience procedures | vector_store_notes, vector_store_notes, customer_support_playbook | 6 |
-| 3 | Best chunking strategy | chunking_experiment_report, vector_store_notes, vi_retrieval_notes | 5 |
-| 4 | Metadata utility (VI) | chunking_experiment_report, rag_system_design, chunking_experiment_report | 4 |
-| 5 | New billing issue fallback | customer_support_playbook, vi_retrieval_notes, python_intro | 4 |
+| 1 | Three key concepts | [169, 284, 22] | 4 |
+| 2 | Technological waves | [85, 79, 76] | 0 |
+| 3 | Global vs IS governance | [154, 70, 123] | 4 |
+| 4 | COBIT/ITIL benchmarks | [144, 48, 190] | 0 |
+| 5 | Purpose of IS urbanization | [73, 160, 8] | 7 |
+
+#### D) DocumentStructureChunker (`document_structure`)
+
+| # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
+|---|-------|-------------------------------|-------------------|
+| 1 | Three key concepts | [89, 170, 151] | 10 |
+| 2 | Technological waves | [184, 268, 82] | 0 |
+| 3 | Global vs IS governance | [86, 190, 249] | 7 |
+| 4 | COBIT/ITIL benchmarks | [3, 51, 273] | 4 |
+| 5 | Purpose of IS urbanization | [234, 103, 177] | 7 |
 
 ### Chấm Điểm Theo Rubric Tự Đánh Giá
 
@@ -228,15 +235,16 @@ Thang điểm: trung bình 5 query, mỗi query chấm theo 5 tiêu chí (Retrie
 
 | Strategy | Điểm trung bình (/10) | Nhận xét ngắn |
 |----------|------------------------|---------------|
-| FixedSizeChunker | 4.6 | Ổn định về kích thước nhưng dễ cắt mất ngữ cảnh quan trọng |
-| SentenceChunker | 5.8 | Tốt nhất trong lượt chạy hiện tại, mạnh ở câu hỏi policy/support |
-| RecursiveChunker | 5.4 | Cân bằng tốt, mạnh ở truy vấn kỹ thuật có cấu trúc |
+| FixedSizeChunker | 3.6 | Độ dài ổn định nhưng mất cấu trúc section |
+| SentenceChunker | 2.4 | Coherence theo câu nhưng rời ngữ cảnh chapter |
+| RecursiveChunker | 3.0 | Khá cân bằng, nhưng chưa nhận diện block đặc thù Markdown |
+| **DocumentStructureChunker** | **5.6** | **Tốt nhất trong lượt chạy; giữ heading/list/table nên grounding tốt hơn** |
 
 ### Kết Luận Retrieval
 
-**Bao nhiêu queries trả về chunk relevant trong top-3?** 4 / 5
+**Bao nhiêu queries trả về chunk relevant trong top-3?** 4 / 5 (với DocumentStructureChunker)
 
-Trong lần chạy này, SentenceChunker đạt điểm cao nhất, nhưng chênh lệch với RecursiveChunker không lớn. RecursiveChunker vẫn là candidate tốt cho default strategy vì tính tổng quát trên dữ liệu mixed-format.
+Trong lần chạy này, DocumentStructureChunker đạt điểm cao nhất trên bộ query đã chọn. Kết quả cho thấy khi dữ liệu có cấu trúc phân cấp rõ (book markdown), strategy dựa trên document structure sẽ hiệu quả hơn chunking tuyến tính theo câu hoặc ký tự.
 
 ---
 

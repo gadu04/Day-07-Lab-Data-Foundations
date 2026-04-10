@@ -4,6 +4,225 @@ import math
 import re
 
 
+HEADING_PATTERN = re.compile(r"^\s{0,3}(#{1,6})\s+(\S.*)$")
+LIST_PATTERN = re.compile(r"^\s{0,3}(?:[-*+]|\d+[.)])\s+\S")
+TABLE_SEPARATOR_PATTERN = re.compile(r"^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$")
+FENCE_PATTERN = re.compile(r"^\s{0,3}(```|~~~)")
+
+
+class DocumentStructureChunker:
+    """
+    Split Markdown/HTML documents by structural blocks.
+
+    The chunker keeps headings as section context and preserves tables,
+    lists, fenced code blocks, and HTML-like blocks as atomic units when
+    possible. Oversized blocks fall back to recursive splitting.
+    """
+
+    def __init__(self, chunk_size: int = 1200, include_heading_context: bool = True) -> None:
+        self.chunk_size = max(1, chunk_size)
+        self.include_heading_context = include_heading_context
+
+    def chunk(self, text: str) -> list[str]:
+        if not text:
+            return []
+
+        blocks = self._parse_blocks(text)
+        if not blocks:
+            return []
+
+        chunks: list[str] = []
+        heading_stack: list[str] = []
+        current_blocks: list[str] = []
+        current_length = 0
+
+        def heading_context() -> str:
+            return "\n".join(heading_stack)
+
+        def flush_current() -> None:
+            nonlocal current_blocks, current_length
+            if not current_blocks:
+                return
+
+            body = "\n\n".join(current_blocks).strip()
+            if not body:
+                current_blocks = []
+                current_length = 0
+                return
+
+            if self.include_heading_context and heading_stack:
+                context = heading_context()
+                chunk_text = f"{context}\n\n{body}".strip()
+            else:
+                chunk_text = body
+
+            if chunk_text:
+                chunks.append(chunk_text)
+            current_blocks = []
+            current_length = 0
+
+        def append_fragment(fragment: str) -> None:
+            nonlocal current_blocks, current_length
+            fragment = fragment.strip()
+            if not fragment:
+                return
+
+            if not current_blocks:
+                current_blocks = [fragment]
+                current_length = len(fragment)
+                return
+
+            candidate_length = current_length + 2 + len(fragment)
+            if candidate_length <= self.chunk_size:
+                current_blocks.append(fragment)
+                current_length = candidate_length
+                return
+
+            flush_current()
+            current_blocks = [fragment]
+            current_length = len(fragment)
+
+        for block_type, block_text in blocks:
+            if block_type == "heading":
+                flush_current()
+                heading_stack = self._update_heading_stack(heading_stack, block_text)
+                continue
+
+            fragments = self._split_oversized_block(block_type, block_text)
+            for fragment in fragments:
+                append_fragment(fragment)
+
+        flush_current()
+        return chunks
+
+    def _update_heading_stack(self, heading_stack: list[str], heading_text: str) -> list[str]:
+        match = HEADING_PATTERN.match(heading_text)
+        if not match:
+            return heading_stack
+
+        level = len(match.group(1))
+        heading_line = heading_text.strip()
+        trimmed_stack = heading_stack[: max(0, level - 1)]
+        trimmed_stack.append(heading_line)
+        return trimmed_stack
+
+    def _split_oversized_block(self, block_type: str, block_text: str) -> list[str]:
+        if len(block_text) <= self.chunk_size:
+            return [block_text.strip()]
+
+        if block_type in {"table", "list", "html", "code"}:
+            separators = ["\n\n", "\n", " ", ""]
+        else:
+            separators = ["\n\n", "\n", ". ", " ", ""]
+
+        return RecursiveChunker(separators=separators, chunk_size=self.chunk_size).chunk(block_text)
+
+    def _parse_blocks(self, text: str) -> list[tuple[str, str]]:
+        lines = text.splitlines()
+        blocks: list[tuple[str, str]] = []
+        current_lines: list[str] = []
+        index = 0
+
+        def flush_paragraph() -> None:
+            nonlocal current_lines
+            if not current_lines:
+                return
+            paragraph = "\n".join(current_lines).strip()
+            if paragraph:
+                blocks.append(("paragraph", paragraph))
+            current_lines = []
+
+        while index < len(lines):
+            line = lines[index]
+            stripped = line.strip()
+
+            if not stripped:
+                flush_paragraph()
+                index += 1
+                continue
+
+            if HEADING_PATTERN.match(line):
+                flush_paragraph()
+                blocks.append(("heading", line.strip()))
+                index += 1
+                continue
+
+            fence_match = FENCE_PATTERN.match(line)
+            if fence_match:
+                flush_paragraph()
+                fence_marker = fence_match.group(1)
+                fence_lines = [line]
+                index += 1
+                while index < len(lines):
+                    fence_line = lines[index]
+                    fence_lines.append(fence_line)
+                    index += 1
+                    if fence_line.strip().startswith(fence_marker):
+                        break
+                blocks.append(("code", "\n".join(fence_lines).strip()))
+                continue
+
+            if self._looks_like_table_row(line):
+                flush_paragraph()
+                table_lines = [line]
+                index += 1
+                while index < len(lines) and self._looks_like_table_row(lines[index]):
+                    table_lines.append(lines[index])
+                    index += 1
+                blocks.append(("table", "\n".join(table_lines).strip()))
+                continue
+
+            if LIST_PATTERN.match(line):
+                flush_paragraph()
+                list_lines = [line]
+                index += 1
+                while index < len(lines):
+                    next_line = lines[index]
+                    next_stripped = next_line.strip()
+                    if not next_stripped:
+                        break
+                    if LIST_PATTERN.match(next_line):
+                        list_lines.append(next_line)
+                        index += 1
+                        continue
+                    if next_line.startswith((" ", "\t")):
+                        list_lines.append(next_line)
+                        index += 1
+                        continue
+                    break
+                blocks.append(("list", "\n".join(list_lines).strip()))
+                continue
+
+            if line.lstrip().startswith("<") and line.rstrip().endswith(">"):
+                flush_paragraph()
+                html_lines = [line]
+                index += 1
+                while index < len(lines):
+                    next_line = lines[index]
+                    next_stripped = next_line.strip()
+                    if not next_stripped:
+                        break
+                    if next_stripped.startswith("<") or next_line.startswith((" ", "\t")):
+                        html_lines.append(next_line)
+                        index += 1
+                        continue
+                    break
+                blocks.append(("html", "\n".join(html_lines).strip()))
+                continue
+
+            current_lines.append(line)
+            index += 1
+
+        flush_paragraph()
+        return blocks
+
+    def _looks_like_table_row(self, line: str) -> bool:
+        stripped = line.strip()
+        if "|" not in stripped:
+            return False
+        return bool(TABLE_SEPARATOR_PATTERN.match(stripped) or stripped.startswith("|") or stripped.endswith("|"))
+
+
 class FixedSizeChunker:
     """
     Split text into fixed-size chunks with optional overlap.
