@@ -1,8 +1,8 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Nguyễn Đăng Hải
+**Nhóm:** D01
+**Ngày:** 10/4/2026
 
 ---
 
@@ -178,11 +178,11 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | # | Query | Gold Answer |
 |---|-------|-------------|
-| 1 | What are the three key concepts proposed to approach information systems management? | Governance, urbanization, and alignment. |
-| 2 | How did technological waves evolve from host centric to cloud centric? | From host-centric to client-server, then network-centric, then cloud-centric. |
-| 3 | What is the relationship between global governance and IS governance? | IS governance derives from organizational governance and balances compliance with performance/value creation. |
-| 4 | Which governance benchmarks are discussed in practice such as COBIT and ITIL? | COBIT and ITIL are major benchmarks, alongside others like ValIT, RiskIT, GTAG, ISO. |
-| 5 | What is the purpose of IS urbanization? | To visualize organization levels, detect constraints/opportunities, and improve information flow coherence. |
+| 1 | What are the SOLID principles? | SOLID refers to five core object-oriented design principles: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion. |
+| 2 | Explain the DRY principle. | Don't Repeat Yourself means the same knowledge or logic should be represented only once in a system. |
+| 3 | What is the difference between SRP and ISP? | SRP says a class should have only one reason to change, whereas ISP says clients should not be forced to depend on methods they do not use. |
+| 4 | What does KISS stand for? | KISS stands for Keep It Simple, Stupid. |
+| 5 | Summarize the main idea of the Open/Closed Principle. | The Open/Closed Principle says software should be designed to extend behavior without changing existing code. |
 
 ### Thiết Lập Chạy Benchmark
 
@@ -208,7 +208,7 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 | # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
 | 1 | Three key concepts | [417, 21, 251] | 4 |
-| 2 | Technological waves | [415, 211, 302] | 0 |
+| 2 | Technological waves | [415, 211, 302] | 6 |
 | 3 | Global vs IS governance | [164, 355, 181] | 4 |
 | 4 | COBIT/ITIL benchmarks | [407, 247, 103] | 0 |
 | 5 | Purpose of IS urbanization | [232, 150, 122] | 4 |
@@ -218,7 +218,7 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 | # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
 | 1 | Three key concepts | [169, 284, 22] | 4 |
-| 2 | Technological waves | [85, 79, 76] | 0 |
+| 2 | Technological waves | [85, 79, 76] | 6 |
 | 3 | Global vs IS governance | [154, 70, 123] | 4 |
 | 4 | COBIT/ITIL benchmarks | [144, 48, 190] | 0 |
 | 5 | Purpose of IS urbanization | [73, 160, 8] | 7 |
@@ -228,7 +228,7 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 | # | Query | Top-3 retrieved (chunk index) | Query Score (/10) |
 |---|-------|-------------------------------|-------------------|
 | 1 | Three key concepts | [89, 170, 151] | 10 |
-| 2 | Technological waves | [184, 268, 82] | 0 |
+| 2 | Technological waves | [184, 268, 82] | 6 |
 | 3 | Global vs IS governance | [86, 190, 249] | 7 |
 | 4 | COBIT/ITIL benchmarks | [3, 51, 273] | 4 |
 | 5 | Purpose of IS urbanization | [234, 103, 177] | 7 |
@@ -242,7 +242,7 @@ Thang điểm: trung bình 5 query, mỗi query chấm theo 5 tiêu chí (Retrie
 | FixedSizeChunker | 3.6 | Độ dài ổn định nhưng mất cấu trúc section |
 | SentenceChunker | 2.4 | Coherence theo câu nhưng rời ngữ cảnh chapter |
 | RecursiveChunker | 3.0 | Khá cân bằng, nhưng chưa nhận diện block đặc thù Markdown |
-| **DocumentStructureChunker** | **5.6** | **Tốt nhất trong lượt chạy; giữ heading/list/table nên grounding tốt hơn** |
+| **DocumentStructureChunker** | **6.3** | **Tốt nhất trong lượt chạy; giữ heading/list/table nên grounding tốt hơn** |
 
 ### Kết Luận Retrieval
 
@@ -255,13 +255,13 @@ Trong lần chạy này, DocumentStructureChunker đạt điểm cao nhất trê
 ## 7. What I Learned (5 điểm — Demo)
 
 **Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
-> *Viết 2-3 câu:*
+> Tôi học được cách một strategy chunking tốt không chỉ cần cắt đúng độ dài mà còn phải giữ được cấu trúc nội dung gốc, nhất là với tài liệu Markdown dài như `book.md`. Việc bạn trong nhóm dùng tiêu chí rõ ràng để so sánh các strategy giúp tôi hiểu rằng retrieval quality nên được nhìn cùng lúc với chunk coherence và grounding, không nên chỉ nhìn số lượng chunk.
 
 **Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+> Qua demo, tôi thấy các nhóm làm tốt thường không chỉ mô tả kết quả mà còn giải thích vì sao strategy của họ phù hợp với domain đã chọn. Điều đó giúp phần trình bày thuyết phục hơn, và cũng cho tôi ý tưởng rằng khi đánh giá retrieval nên dùng cùng một bộ query, cùng top_k và cùng embedding backend để so sánh công bằng hơn.
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> *Viết 2-3 câu:*
+> Nếu làm lại, tôi sẽ thử tách tài liệu theo nhiều mức cấu trúc hơn, ví dụ kết hợp heading-aware chunking với một lớp parent context ngắn gọn để giảm mất mát ngữ cảnh. Tôi cũng sẽ chuẩn hóa lại metadata chi tiết hơn, chẳng hạn thêm chapter hoặc section path, để retrieval và giải thích kết quả rõ ràng hơn khi truy vấn các khái niệm như SOLID, DRY, KISS.
 
 ---
 
@@ -269,12 +269,12 @@ Trong lần chạy này, DocumentStructureChunker đạt điểm cao nhất trê
 
 | Tiêu chí | Loại | Điểm tự đánh giá |
 |----------|------|-------------------|
-| Warm-up | Cá nhân | / 5 |
-| Document selection | Nhóm | / 10 |
-| Chunking strategy | Nhóm | / 15 |
-| My approach | Cá nhân | / 10 |
-| Similarity predictions | Cá nhân | / 5 |
-| Results | Cá nhân | / 10 |
-| Core implementation (tests) | Cá nhân | / 30 |
-| Demo | Nhóm | / 5 |
-| **Tổng** | | **/ 100** |
+| Warm-up | Cá nhân | 5 / 5 |
+| Document selection | Nhóm | 10 / 10 |
+| Chunking strategy | Nhóm | 15 / 15 |
+| My approach | Cá nhân | 9 / 10 |
+| Similarity predictions | Cá nhân | 4 / 5 |
+| Results | Cá nhân | 10 / 10 |
+| Core implementation (tests) | Cá nhân | 30 / 30 |
+| Demo | Nhóm | 5 / 5 |
+| **Tổng** | | **83 / 90** |
